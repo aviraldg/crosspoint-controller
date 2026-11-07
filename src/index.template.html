@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrossPoint Playdate Web Hub — Plugins, Files, Settings &amp; Fonts</title>
+  <link rel="icon" type="image/svg+xml" href="__ICON_DATA_URI__" />
+  <style>
+__WEB_CSS__
+
+__CONTROLLER_CSS__
+  </style>
+</head>
+<body class="web-ui">
+  <!-- Playdate Connection Bar -->
+  <div class="pd-conn-bar">
+    <div class="pd-conn-inner">
+      <div class="pd-conn-status">
+        <span id="pdDot" class="pd-dot"></span>
+        <div>
+          <strong id="pdModeLabel">Not connected to Playdate</strong>
+          <div id="pdTargetLabel" style="font-size:0.8rem;color:#b8c0cc;">
+            Connect your Playdate over USB (Serial while running CrossPoint, or Data Disk folder)
+          </div>
+        </div>
+      </div>
+      <div class="pd-conn-actions">
+        <button type="button" class="pd-btn" id="btnConnectSerial" onclick="connectWebSerial(false)">
+          &#9889; Connect USB Serial (Live)
+        </button>
+        <button type="button" class="pd-btn secondary" id="btnOpenFolder" onclick="connectDirectoryPicker()">
+          &#128193; Open Playdate Data Folder
+        </button>
+        <button type="button" class="pd-btn secondary" id="btnRefreshHub" onclick="refreshActiveTab()" title="Reload current tab from Playdate">
+          &#8635; Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standard CrossPoint Header -->
+  <header class="brand">
+    <div class="brand-inner">
+      <h1>
+        <a class="brand-link" href="#plugins" onclick="switchTab('plugins');return false;">
+          <img class="brand-logo" src="__ICON_DATA_URI__" alt="" width="32" height="32" />
+          CrossPoint <span class="brand-reader">Playdate Hub</span>
+        </a>
+      </h1>
+      <nav class="nav-links desktop-nav">
+        <a href="#plugins" data-tab="plugins" class="active-tab" onclick="switchTab('plugins');return false;">Plugins</a>
+        <a href="#files" data-tab="files" onclick="switchTab('files');return false;">File Manager</a>
+        <a href="#settings" data-tab="settings" onclick="switchTab('settings');return false;">Settings</a>
+        <a href="#fonts" data-tab="fonts" onclick="switchTab('fonts');return false;">Fonts</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-content">
+    <!-- Connection Onboarding Card -->
+    <div class="card pd-help-card" id="onboardingCard">
+      <h2 style="margin-top:0;">Playdate Web Plugins &amp; File Hub</h2>
+      <p style="margin:6px 0;">
+        Manage CrossPoint web plugins, files, settings, and fonts directly in your browser:
+      </p>
+      <ol style="margin:8px 0 4px 20px;line-height:1.5;">
+        <li>
+          <b>Live USB Serial Mode (Recommended):</b> Open CrossPoint on your Playdate, plug it into your computer via USB, and click
+          <b>&#9889; Connect USB Serial (Live)</b> above. All changes apply immediately without rebooting!
+        </li>
+        <li>
+          <b>USB Data Disk Mode:</b> Or put your Playdate into USB Data Disk mode (<i>Settings &rarr; System &rarr; Reboot to Data Disk</i>), click
+          <b>&#128193; Open Playdate Data Folder</b>, and select your mounted <code>PLAYDATE</code> drive (or <code>Data</code> folder).
+        </li>
+      </ol>
+    </div>
+
+    <!-- TAB 1: PLUGINS (/plugins) -->
+    <section id="tab-plugins" class="hub-section active">
+      <div id="plugin-container"></div>
+      <div class="card" id="empty-state">
+        <p class="empty-state" id="empty-state-msg">
+          Connect your Playdate above to load installed web plugins.
+        </p>
+      </div>
+    </section>
+
+    <!-- TAB 2: FILE MANAGER (/files) -->
+    <section id="tab-files" class="hub-section">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div>
+            <h2 style="margin:0;display:inline-block;">Files</h2>
+            <span id="filesBreadcrumb" style="margin-left:10px;color:var(--label-color);">/</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="btn-small btn-add" style="cursor:pointer;margin:0;">
+              + Upload Files
+              <input type="file" id="fileUploadInput" multiple style="display:none" onchange="uploadSelectedFiles(this.files)" />
+            </label>
+            <button type="button" class="btn-small" onclick="promptCreateFolder()">New Folder</button>
+          </div>
+        </div>
+        <div id="filesTableContainer">
+          <p class="empty-state">Connect your Playdate to browse files.</p>
+        </div>
+      </div>
+      <div id="files-plugin-container"></div>
+    </section>
+
+    <!-- TAB 3: SETTINGS (/settings) -->
+    <section id="tab-settings" class="hub-section">
+      <div id="settings-container">
+        <div class="card"><p class="empty-state">Connect your Playdate to load settings.</p></div>
+      </div>
+      <div style="margin:16px 0;display:none;" id="save-container">
+        <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save Settings</button>
+      </div>
+      <div id="opds-container"></div>
+    </section>
+
+    <!-- TAB 4: FONTS (/fonts) -->
+    <section id="tab-fonts" class="hub-section">
+      <div class="card">
+        <h2>Installed Fonts</h2>
+        <div id="families"><p class="empty-state">Connect your Playdate to view installed fonts.</p></div>
+      </div>
+      <div class="card">
+        <h2>Upload Font Family</h2>
+        <p style="color:var(--label-color);font-size:0.9em;margin:0 0 12px;">
+          Select a folder or multiple <code>.cpfont</code>, <code>.ttf</code>, or <code>.otf</code> files belonging to one font family.
+        </p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="fontFilesInput" multiple />
+          <button type="button" class="btn btn-primary" onclick="uploadSelectedFonts()">Upload Font</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Built-in Diagnostics & Debug Log Drawer -->
+    <details class="debug-drawer" id="debugDrawer">
+      <summary>
+        <span>Diagnostics &amp; Debug Console (<span id="debugLogCount">0</span> events)</span>
+        <span style="font-size:0.75rem;color:#94a3b8;">Click to expand/collapse</span>
+      </summary>
+      <div class="debug-toolbar">
+        <button type="button" class="btn-small" onclick="copyDebugLogs()">Copy Logs</button>
+        <button type="button" class="btn-small" onclick="clearDebugLogs()">Clear</button>
+        <label style="font-size:0.78rem;color:#cbd5e1;display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="chkVerboseSerial" /> Verbose Serial Wire Logs
+        </label>
+      </div>
+      <pre class="debug-log-output" id="debugLogOutput"></pre>
+    </details>
+  </main>
+
+  <!-- Standard CrossPoint Footer + Dialog/Toast -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <a class="brand-link" href="#plugins" onclick="switchTab('plugins');return false;">
+            <img class="brand-logo" src="__ICON_DATA_URI__" alt="" width="28" height="28" />
+            CrossPoint <span class="brand-reader">Reader</span>
+          </a>
+          <p>Playdate Web Serial &amp; Data Disk Companion Hub — works with all CrossPoint web plugins.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <dialog id="webMessageDialog" class="web-dialog" aria-labelledby="webDialogTitle" aria-describedby="webDialogMessage">
+    <form method="dialog">
+      <h2 id="webDialogTitle"></h2>
+      <p id="webDialogMessage"></p>
+      <div class="web-dialog-actions">
+        <button id="webDialogCancel" value="cancel">Cancel</button>
+        <button id="webDialogConfirm" value="confirm">OK</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="webToast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Embedded JSZip -->
+  <script>
+__JSZIP_JS__
+  </script>
+
+  <!-- Controller Core (Dialogs, Logger, WebSerial, FileSystemAccess, Virtual Router) -->
+  <script>
+__CONTROLLER_PRE_JS__
+  </script>
+
+  <!-- Official CrossPoint Plugin Host (`plugin-host.js`) -->
+  <script>
+__PLUGIN_HOST_JS__
+  </script>
+
+  <!-- Hub UI Controllers -->
+  <script>
+__CONTROLLER_POST_JS__
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "crosspoint-controller",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CrossPoint Playdate Web Hub — Web Serial & Data Disk browser controller for CrossPoint Reader on Panic Playdate",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "lint": "eslint src/js scripts tests eslint.config.mjs",
+    "format": "prettier --write \"src/**/*.{js,css}\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.{json,md,mjs}\"",
+    "format:check": "prettier --check \"src/**/*.{js,css}\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.{json,md,mjs}\"",
+    "test:unit": "node --test tests/unit.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/js/**\" --test-coverage-include=\"scripts/**\" --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=75 tests/unit.test.mjs",
+    "test:e2e": "node scripts/build.mjs && python3 tests/e2e_test.py",
+    "test": "npm run test:coverage && npm run test:e2e",
+    "check": "npm run lint && npm run format:check && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3"
+  }
+}

@@ -1,0 +1,72 @@
+name: CI & Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout crosspoint-controller
+        uses: actions/checkout@v4
+
+      - name: Checkout crosspoint-reader (upstream web assets)
+        uses: actions/checkout@v4
+        with:
+          repository: aviraldg/crosspoint-reader
+          ref: feat/playdate-port
+          path: .cache/crosspoint-reader
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint & check formatting
+        run: |
+          npm run lint
+          npm run format:check
+
+      - name: Build static Web Hub
+        run: npm run build
+
+      - name: Run unit tests & enforce coverage thresholds (>=90% lines/functions, >=75% branches)
+        run: npm run test:coverage
+
+      - name: Run headless Chrome E2E tests
+        run: npm run test:e2e
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
